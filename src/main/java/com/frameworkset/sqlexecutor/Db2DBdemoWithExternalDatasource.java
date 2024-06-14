@@ -15,6 +15,8 @@ package com.frameworkset.sqlexecutor;
  * limitations under the License.
  */
 
+import com.frameworkset.common.poolman.DBUtil;
+import com.frameworkset.orm.adapter.DBFactory;
 import org.frameworkset.spi.boot.BBossStarter;
 import org.frameworkset.tran.DBConfig;
 import org.frameworkset.tran.DataRefactor;
@@ -46,16 +48,16 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version 1.0
  */
 @Service
-public class Db2DBdemoWithStatusConfigDB implements InitializingBean {
+public class Db2DBdemoWithExternalDatasource implements InitializingBean {
 	@Autowired
 	@Qualifier("bbossStarterDefault")
 	private BBossStarter bbossStarterDefault;
 	@Autowired
 	@Qualifier("bbossStarterSecond")
 	private BBossStarter bbossStarterSecond;
-	private static Logger logger = LoggerFactory.getLogger(Db2DBdemoWithStatusConfigDB.class);
+	private static Logger logger = LoggerFactory.getLogger(Db2DBdemoWithExternalDatasource.class);
 
-	public Db2DBdemoWithStatusConfigDB(){
+	public Db2DBdemoWithExternalDatasource(){
 	}
 
 	/**
@@ -79,17 +81,22 @@ public class Db2DBdemoWithStatusConfigDB implements InitializingBean {
 		 * 源db相关配置
 		 */
 		DBInputConfig dbInputConfig = new DBInputConfig();
-		dbInputConfig.setDbName("secondds");
-		dbInputConfig
+		dbInputConfig.setDbName("secondds1");
+		dbInputConfig.setDataSource(DBUtil.getDataSource("secondds"))//直接设置DataSource
+                .setDbtype(DBFactory.DBMMysql)//需指定数据库类型                
 				.setSqlFilepath("sql-dbtran.xml")
 				.setSqlName("demoexport");
 		importBuilder.setInputConfig(dbInputConfig);
 		importBuilder
 				.setPrintTaskLog(true) //可选项，true 打印任务执行日志（耗时，处理记录数） false 不打印，默认值false
 				.setBatchSize(5000); //可选项,批量导入db的记录数，默认为-1，逐条处理，> 0时批量处理
+        
+        //目标数据库配置
 		DBOutputConfig dbOutputConfig = new DBOutputConfig();
-		dbOutputConfig.setDbName("firstds")//指定目标数据库，在application.properties文件中配置
-				.setSqlFilepath("sql-dbtran.xml")
+		dbOutputConfig.setDbName("firstds1")//指定目标数据库，在application.properties文件中配置
+                .setDataSource(DBUtil.getDataSource("firstds"))//直接设置DataSource
+                .setDbtype(DBFactory.DBMMysql)//需指定数据库类型
+                .setSqlFilepath("sql-dbtran.xml")
 //				.setDbDriver("com.mysql.cj.jdbc.Driver") //数据库驱动程序，必须导入相关数据库的驱动jar包
 //				.setDbUrl("jdbc:mysql://localhost:3306/bboss?allowPublicKeyRetrieval=true&useCursorFetch=true") //通过useCursorFetch=true启用mysql的游标fetch机制，否则会有严重的性能隐患，useCursorFetch必须和jdbcFetchSize参数配合使用，否则不会生效
 //				.setDbUser("root")
